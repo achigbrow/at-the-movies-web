@@ -1,10 +1,7 @@
 package edu.cnm.deepdive.atthemovies.model.entity;
 
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import edu.cnm.deepdive.atthemovies.view.FlatActor;
-import edu.cnm.deepdive.atthemovies.view.FlatMovie;
 import java.net.URI;
 import java.util.Date;
 import java.util.LinkedList;
@@ -17,10 +14,7 @@ import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
-import javax.persistence.ManyToMany;
-import javax.persistence.OrderBy;
+import javax.persistence.OneToMany;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import org.hibernate.annotations.CreationTimestamp;
@@ -33,18 +27,21 @@ import org.springframework.stereotype.Component;
 
 @Entity
 @Component
-@JsonIgnoreProperties(value = {"id", "created", "updated", "href", "movies"}, allowGetters = true,
+@JsonIgnoreProperties(value = {"created", "updated", "href"}, allowGetters = true,
     ignoreUnknown = true)
-public class Actor implements FlatActor {
+public class Genre {
 
   private static EntityLinks entityLinks;
 
   @Id
   @GeneratedValue(generator = "uuid2")
   @GenericGenerator(name = "uuid2", strategy = "uuid2")
-  @Column(name = "actor_id", columnDefinition = "CHAR(16) FOR BIT DATA",
+  @Column(name = "genre_id", columnDefinition = "CHAR(16) FOR BIT DATA",
       nullable = false, updatable = false)
   private UUID id;
+
+  @Column(nullable = false, unique = true)
+  private String name;
 
   @NonNull
   @CreationTimestamp
@@ -58,34 +55,23 @@ public class Actor implements FlatActor {
   @Column(nullable = false)
   private Date updated;
 
-  @NonNull
-  @Column(nullable = false, unique = true)
-  private String name;
-
-  @ManyToMany(fetch = FetchType.LAZY,
-  cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
-  @JoinTable(joinColumns = @JoinColumn(name = "actor_id"),
-  inverseJoinColumns = @JoinColumn(name="movie_id"))
-  @OrderBy("title asc")
-  @JsonSerialize(contentAs = FlatMovie.class)
+  @JsonIgnore
+  @OneToMany(fetch = FetchType.LAZY, mappedBy = "genre",
+  cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.MERGE, CascadeType.REFRESH})
   private List<Movie> movies = new LinkedList<>();
 
-  @Override
   public UUID getId() {
     return id;
   }
 
-  @Override
   public Date getCreated() {
     return created;
   }
 
-  @Override
   public Date getUpdated() {
     return updated;
   }
 
-  @Override
   public String getName() {
     return name;
   }
@@ -94,13 +80,8 @@ public class Actor implements FlatActor {
     this.name = name;
   }
 
-  public List<Movie> getMovies() {
-    return movies;
-  }
-
-  @Override
   public URI getHref() {
-    return entityLinks.linkForSingleResource(Actor.class, id).toUri();
+    return entityLinks.linkForSingleResource(Genre.class, id).toUri();
   }
 
   @PostConstruct
@@ -110,6 +91,7 @@ public class Actor implements FlatActor {
 
   @Autowired
   private void setEntityLinks(EntityLinks entityLinks) {
-    Actor.entityLinks = entityLinks;
+    Genre.entityLinks = entityLinks;
   }
+
 }
